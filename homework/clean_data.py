@@ -6,18 +6,18 @@ import pandas as pd  # type: ignore
 def load_data(input_file):
     """Lea el archivo usando pandas y devuelva un DataFrame"""
 
-    # Esta función asume que `input_file` apunta al CSV/TSV con a header
-    # columna `raw_text` (como en files/input.txt)
+    #
+    # Esta parte es igual al taller anterior
+    #
     df = pd.read_csv(input_file)
     return df
 
 
 def create_key(df, n):
     """Cree una nueva columna en el DataFrame que contenga el key de la
-    columna 'raw_text'"""
+    columna 'text'"""
 
     df = df.copy()
-    # The input file uses column `raw_text`
     df["key"] = df["raw_text"]
     df["key"] = df["key"].str.strip()
     df["key"] = df["key"].str.lower()
@@ -29,23 +29,18 @@ def create_key(df, n):
 
     # ------------------------------------------------------
     # Esta es la parte especifica del algoritmo de n-gram:
+    #
     # - Una el texto sin espacios en blanco
     df["key"] = df["key"].str.join("")
-
-    # - Convierta el texto a una lista de n-gramas (length n)
-    def _ngrams(s: str) -> list:
-        if not isinstance(s, str):
-            return []
-        L = len(s)
-        if L < n:
-            return [s]
-        return [s[i : i + n] for i in range(0, L - n + 1)]
-
-    df["key"] = df["key"].map(_ngrams)
-
+    #
+    # - Convierta el texto a una lista de n-gramas
+    df["key"] = df["key"].map(
+        lambda x: [x[t : t + n] for t in range(len(x))],
+    )
+    #
     # - Ordene la lista de n-gramas y remueve duplicados
     df["key"] = df["key"].apply(lambda x: sorted(set(x)))
-
+    #
     # - Convierta la lista de ngramas a una cadena
     df["key"] = df["key"].str.join("")
     # ------------------------------------------------------
@@ -56,33 +51,37 @@ def create_key(df, n):
 def generate_cleaned_column(df):
     """Crea la columna 'cleaned' en el DataFrame"""
 
-    df = df.copy()
-    # Sort by key and original raw_text so the chosen representative is stable
-    df = df.sort_values(by=["key", "raw_text"], ascending=[True, True])
-    keys = df.drop_duplicates(subset="key", keep="first")
+    #
+    # Este código es identico al anteior
+    #
+    keys = df.copy()
+    keys = keys.sort_values(by=["key", "raw_text"], ascending=[True, True])
+    keys = keys.drop_duplicates(subset="key", keep="first")
     key_dict = dict(zip(keys["key"], keys["raw_text"]))
-    df["cleaned"] = df["key"].map(key_dict)
+    df["cleaned_text"] = df["key"].map(key_dict)
 
     return df
 
 
 def save_data(df, output_file):
-    """Guarda el DataFrame en un archivo con columna `cleaned_text`"""
-
+    """Guarda el DataFrame en un archivo"""
+    #
+    # Este código es identico al anteior
+    #
     df = df.copy()
-    df = df[["cleaned"]]
-    df = df.rename(columns={"cleaned": "cleaned_text"})
+    df = df[["raw_text", "cleaned_text"]]
     df.to_csv(output_file, index=False)
 
 
 def main(input_file, output_file, n=2):
     """Ejecuta la limpieza de datos"""
-
+    #
+    # Este código es identico al anteior
+    #
     df = load_data(input_file)
     df = create_key(df, n)
     df = generate_cleaned_column(df)
-    # Write an intermediate file for tests to inspect
-    df.to_csv("../files/test.csv", index=False)
+    df.to_csv("files/test.csv", index=False)
     save_data(df, output_file)
 
 
